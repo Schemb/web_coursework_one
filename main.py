@@ -91,45 +91,49 @@ def import_csv():
     conn = get_connection()
     cursor = conn.cursor()
 
-    with open("books.csv", newline="", encoding="utf-8") as file:
-        reader = csv.DictReader(file)
+    cursor.execute("SELECT COUNT(*) FROM books")
+    count = cursor.fetchone()[0]
 
-        for row in reader:
-            cursor.execute("""
-            INSERT INTO books (
-                bookId, title, series, author, rating, description, language,
-                isbn, genres, characters, bookFormat, edition, pages, publisher,
-                publishDate, firstPublishDate, awards, numRatings, ratingsByStars,
-                likedPercent, setting, coverImg, bbeScore, bbeVotes, price
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                to_text(row.get("bookId")),
-                to_text(row.get("title")),
-                to_text(row.get("series")),
-                to_text(row.get("author")),
-                to_float(row.get("rating")),
-                to_text(row.get("description")),
-                to_text(row.get("language")),
-                to_text(row.get("isbn")),
-                to_text(row.get("genres")),
-                to_text(row.get("characters")),
-                to_text(row.get("bookFormat")),
-                to_text(row.get("edition")),
-                to_int(row.get("pages")),
-                to_text(row.get("publisher")),
-                to_text(row.get("publishDate")),
-                to_text(row.get("firstPublishDate")),
-                to_text(row.get("awards")),
-                to_int(row.get("numRatings")),
-                to_text(row.get("ratingsByStars")),
-                to_float(row.get("likedPercent")),
-                to_text(row.get("setting")),
-                to_text(row.get("coverImg")),
-                to_float(row.get("bbeScore")),
-                to_int(row.get("bbeVotes")),
-                to_float(row.get("price"))
-            ))
+    if count == 0:
+        with open("books.csv", newline="", encoding="utf-8") as file:
+            reader = csv.DictReader(file)
+
+            for row in reader:
+                cursor.execute("""
+                INSERT INTO books (
+                    bookId, title, series, author, rating, description, language,
+                    isbn, genres, characters, bookFormat, edition, pages, publisher,
+                    publishDate, firstPublishDate, awards, numRatings, ratingsByStars,
+                    likedPercent, setting, coverImg, bbeScore, bbeVotes, price
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    to_text(row.get("bookId")),
+                    to_text(row.get("title")),
+                    to_text(row.get("series")),
+                    to_text(row.get("author")),
+                    to_float(row.get("rating")),
+                    to_text(row.get("description")),
+                    to_text(row.get("language")),
+                    to_text(row.get("isbn")),
+                    to_text(row.get("genres")),
+                    to_text(row.get("characters")),
+                    to_text(row.get("bookFormat")),
+                    to_text(row.get("edition")),
+                    to_int(row.get("pages")),
+                    to_text(row.get("publisher")),
+                    to_text(row.get("publishDate")),
+                    to_text(row.get("firstPublishDate")),
+                    to_text(row.get("awards")),
+                    to_int(row.get("numRatings")),
+                    to_text(row.get("ratingsByStars")),
+                    to_float(row.get("likedPercent")),
+                    to_text(row.get("setting")),
+                    to_text(row.get("coverImg")),
+                    to_float(row.get("bbeScore")),
+                    to_int(row.get("bbeVotes")),
+                    to_float(row.get("price"))
+                ))
 
     conn.commit()
     conn.close()
