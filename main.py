@@ -285,11 +285,6 @@ def update_book(id: int, book: BookUpdate):
 
     return {"message": "Book updated"}
 
-    conn.commit()
-    conn.close()
-
-    return {"message": "Book updated"}
-
 
 @app.delete("/books/{id}", status_code=204)
 def delete_book(id: int):
