@@ -308,3 +308,62 @@ def delete_book(id: int):
     conn.close()
 
     return Response(status_code=204)
+
+@app.get("/analytics/genre-trends")
+def genre_trends():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT genres, COUNT(*) as count
+        FROM books
+        WHERE genres IS NOT NULL AND genres != ''
+        GROUP BY genres
+        ORDER BY count DESC
+        LIMIT 10
+    """)
+    results = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+
+    return {"genre_trends": results}
+
+@app.get("/analytics/top-rated")
+def top_rated():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, title, author, rating
+        FROM books
+        WHERE rating IS NOT NULL
+        ORDER BY rating DESC
+        LIMIT 10
+    """)
+    results = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+
+    return {"top_rated": results}
+
+@app.get("/analytics/rating-distribution")
+def rating_distribution():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            CASE
+                WHEN rating < 3 THEN 'Below 3'
+                WHEN rating >= 3 AND rating < 4 THEN '3 to 3.9'
+                WHEN rating >= 4 AND rating < 4.5 THEN '4 to 4.4'
+                ELSE '4.5 and above'
+            END AS rating_band,
+            COUNT(*) AS count
+        FROM books
+        WHERE rating IS NOT NULL
+        GROUP BY rating_band
+        ORDER BY count DESC
+    """)
+    results = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+
+    return {"rating_distribution": results}
