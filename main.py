@@ -49,13 +49,11 @@ def init_db():
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("DROP TABLE IF EXISTS books")
-
     cursor.execute("""
-    CREATE TABLE books (
+    CREATE TABLE IF NOT EXISTS books (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         bookId TEXT,
-        title TEXT,
+        title TEXT NOT NULL,
         series TEXT,
         author TEXT,
         rating REAL,
