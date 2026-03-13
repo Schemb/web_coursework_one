@@ -78,7 +78,7 @@ web_coursework_one/
 
 ### 1. Clone the repository
 
-git clone <your-repository-url>
+git clone [<your-repository-url>](https://github.com/Schemb/web_coursework_one.git)
 cd web_coursework_one
 
 ### 2. Create a virtual environment

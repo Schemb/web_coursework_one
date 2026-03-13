@@ -1,3 +1,15 @@
+# ------------------------------------------------------------
+# Book Metadata and Recommendation API
+# COMP3011 Web Services and Web Data Coursework
+#
+# This FastAPI application provides CRUD functionality for a
+# book metadata dataset stored in an SQLite database.
+#
+# The database is initially populated from a CSV dataset.
+# Additional analytics endpoints provide insights into the
+# dataset, such as genre trends and rating distributions.
+# ------------------------------------------------------------
+
 from fastapi import FastAPI, HTTPException, Response
 import sqlite3
 import csv
@@ -5,7 +17,15 @@ import os
 from pydantic import BaseModel
 from typing import Optional
 
+
+# ------------------------------------------------------------
+# Pydantic Models
+# These models define the expected request bodies for creating
+# and updating books. They provide automatic validation.
+# ------------------------------------------------------------
+
 class BookCreate(BaseModel):
+    """Model used when creating a new book."""
     bookId: Optional[str] = None
     title: str
     series: Optional[str] = None
@@ -34,6 +54,7 @@ class BookCreate(BaseModel):
 
 
 class BookUpdate(BaseModel):
+    """Model used when updating an existing book."""
     bookId: Optional[str] = None
     title: Optional[str] = None
     series: Optional[str] = None
@@ -60,18 +81,41 @@ class BookUpdate(BaseModel):
     bbeVotes: Optional[int] = None
     price: Optional[float] = None
 
+
+# ------------------------------------------------------------
+# FastAPI application instance
+# ------------------------------------------------------------
+
 app = FastAPI()
 
+# SQLite database filename
 DB_NAME = "books.db"
 
 
+# ------------------------------------------------------------
+# Database Connection Helper
+# ------------------------------------------------------------
+
 def get_connection():
+    """
+    Create and return a connection to the SQLite database.
+
+    The row_factory option allows rows to be accessed like
+    dictionaries, making JSON conversion easier.
+    """
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     return conn
 
 
+# ------------------------------------------------------------
+# Data Cleaning / Conversion Helpers
+# These functions convert CSV string values into the correct
+# Python types before inserting them into the database.
+# ------------------------------------------------------------
+
 def to_int(value):
+    """Convert a value to an integer if possible."""
     if value is None:
         return None
     value = str(value).strip().replace(",", "")
@@ -84,6 +128,7 @@ def to_int(value):
 
 
 def to_float(value):
+    """Convert a value to a float if possible."""
     if value is None:
         return None
     value = str(value).strip().replace(",", "").replace("£", "").replace("$", "")
@@ -96,11 +141,17 @@ def to_float(value):
 
 
 def to_text(value):
+    """Convert a value to a clean string."""
     if value is None:
         return None
     value = str(value).strip()
     return value if value != "" else None
 
+
+# ------------------------------------------------------------
+# Database Initialisation
+# Creates the books table if it does not already exist.
+# ------------------------------------------------------------
 
 def init_db():
     conn = get_connection()
@@ -141,6 +192,11 @@ def init_db():
     conn.close()
 
 
+# ------------------------------------------------------------
+# CSV Import Function
+# Imports the dataset into the database if the table is empty.
+# ------------------------------------------------------------
+
 def import_csv():
     if not os.path.exists("books.csv"):
         return
@@ -148,9 +204,11 @@ def import_csv():
     conn = get_connection()
     cursor = conn.cursor()
 
+    # Check if database already contains data
     cursor.execute("SELECT COUNT(*) FROM books")
     count = cursor.fetchone()[0]
 
+    # Only import CSV if the table is empty
     if count == 0:
         with open("books.csv", newline="", encoding="utf-8") as file:
             reader = csv.DictReader(file)
@@ -196,17 +254,24 @@ def import_csv():
     conn.close()
 
 
+# Initialise database and import CSV dataset on startup
 init_db()
 import_csv()
 
 
+# ------------------------------------------------------------
+# API Endpoints
+# ------------------------------------------------------------
+
 @app.get("/")
 def root():
+    """Simple endpoint to verify that the API is running."""
     return {"message": "Book API running"}
 
 
 @app.get("/books")
 def get_books():
+    """Return a list of books (limited to 100 results)."""
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -219,6 +284,7 @@ def get_books():
 
 @app.get("/books/{id}")
 def get_book(id: int):
+    """Retrieve a single book by its database ID."""
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -235,6 +301,7 @@ def get_book(id: int):
 
 @app.post("/books", status_code=201)
 def add_book(book: BookCreate):
+    """Create a new book record in the database."""
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -257,6 +324,7 @@ def add_book(book: BookCreate):
 
 @app.put("/books/{id}")
 def update_book(id: int, book: BookUpdate):
+    """Update an existing book record."""
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -288,6 +356,7 @@ def update_book(id: int, book: BookUpdate):
 
 @app.delete("/books/{id}", status_code=204)
 def delete_book(id: int):
+    """Delete a book record from the database."""
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -304,8 +373,14 @@ def delete_book(id: int):
 
     return Response(status_code=204)
 
+
+# ------------------------------------------------------------
+# Analytics Endpoints
+# ------------------------------------------------------------
+
 @app.get("/analytics/genre-trends")
 def genre_trends():
+    """Return the most common genres in the dataset."""
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -322,8 +397,10 @@ def genre_trends():
 
     return {"genre_trends": results}
 
+
 @app.get("/analytics/top-rated")
 def top_rated():
+    """Return the top-rated books."""
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -339,8 +416,10 @@ def top_rated():
 
     return {"top_rated": results}
 
+
 @app.get("/analytics/rating-distribution")
 def rating_distribution():
+    """Return distribution of books across rating ranges."""
     conn = get_connection()
     cursor = conn.cursor()
 
