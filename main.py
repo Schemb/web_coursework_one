@@ -1,7 +1,64 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 import sqlite3
 import csv
 import os
+from pydantic import BaseModel
+from typing import Optional
+
+class BookCreate(BaseModel):
+    bookId: Optional[str] = None
+    title: str
+    series: Optional[str] = None
+    author: Optional[str] = None
+    rating: Optional[float] = None
+    description: Optional[str] = None
+    language: Optional[str] = None
+    isbn: Optional[str] = None
+    genres: Optional[str] = None
+    characters: Optional[str] = None
+    bookFormat: Optional[str] = None
+    edition: Optional[str] = None
+    pages: Optional[int] = None
+    publisher: Optional[str] = None
+    publishDate: Optional[str] = None
+    firstPublishDate: Optional[str] = None
+    awards: Optional[str] = None
+    numRatings: Optional[int] = None
+    ratingsByStars: Optional[str] = None
+    likedPercent: Optional[float] = None
+    setting: Optional[str] = None
+    coverImg: Optional[str] = None
+    bbeScore: Optional[float] = None
+    bbeVotes: Optional[int] = None
+    price: Optional[float] = None
+
+
+class BookUpdate(BaseModel):
+    bookId: Optional[str] = None
+    title: Optional[str] = None
+    series: Optional[str] = None
+    author: Optional[str] = None
+    rating: Optional[float] = None
+    description: Optional[str] = None
+    language: Optional[str] = None
+    isbn: Optional[str] = None
+    genres: Optional[str] = None
+    characters: Optional[str] = None
+    bookFormat: Optional[str] = None
+    edition: Optional[str] = None
+    pages: Optional[int] = None
+    publisher: Optional[str] = None
+    publishDate: Optional[str] = None
+    firstPublishDate: Optional[str] = None
+    awards: Optional[str] = None
+    numRatings: Optional[int] = None
+    ratingsByStars: Optional[str] = None
+    likedPercent: Optional[float] = None
+    setting: Optional[str] = None
+    coverImg: Optional[str] = None
+    bbeScore: Optional[float] = None
+    bbeVotes: Optional[int] = None
+    price: Optional[float] = None
 
 app = FastAPI()
 
@@ -177,25 +234,18 @@ def get_book(id: int):
 
 
 @app.post("/books", status_code=201)
-def add_book(book: dict):
+def add_book(book: BookCreate):
     conn = get_connection()
     cursor = conn.cursor()
 
-    allowed_fields = [
-        "bookId","title","series","author","rating","description","language",
-        "isbn","genres","characters","bookFormat","edition","pages","publisher",
-        "publishDate","firstPublishDate","awards","numRatings","ratingsByStars",
-        "likedPercent","setting","coverImg","bbeScore","bbeVotes","price"
-    ]
+    data = book.model_dump(exclude_none=True)
 
-    filtered_book = {k: v for k, v in book.items() if k in allowed_fields}
-
-    columns = ", ".join(filtered_book.keys())
-    placeholders = ", ".join(["?"] * len(filtered_book))
+    columns = ", ".join(data.keys())
+    placeholders = ", ".join(["?"] * len(data))
 
     cursor.execute(
         f"INSERT INTO books ({columns}) VALUES ({placeholders})",
-        tuple(filtered_book.values())
+        tuple(data.values())
     )
 
     conn.commit()
@@ -206,7 +256,7 @@ def add_book(book: dict):
 
 
 @app.put("/books/{id}")
-def update_book(id: int, book: dict):
+def update_book(id: int, book: BookUpdate):
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -217,12 +267,23 @@ def update_book(id: int, book: dict):
         conn.close()
         raise HTTPException(status_code=404, detail="Book not found")
 
-    updates = ", ".join([f"{key}=?" for key in book.keys()])
+    data = book.model_dump(exclude_none=True)
+
+    if not data:
+        conn.close()
+        raise HTTPException(status_code=400, detail="No fields provided for update")
+
+    updates = ", ".join([f"{key}=?" for key in data.keys()])
 
     cursor.execute(
         f"UPDATE books SET {updates} WHERE id = ?",
-        tuple(book.values()) + (id,)
+        tuple(data.values()) + (id,)
     )
+
+    conn.commit()
+    conn.close()
+
+    return {"message": "Book updated"}
 
     conn.commit()
     conn.close()
@@ -245,3 +306,5 @@ def delete_book(id: int):
     cursor.execute("DELETE FROM books WHERE id = ?", (id,))
     conn.commit()
     conn.close()
+
+    return Response(status_code=204)
